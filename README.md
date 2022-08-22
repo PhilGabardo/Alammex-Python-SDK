@@ -3,6 +3,10 @@ Alammex Python SDK for fetching
 - Alammex quote for a swap
 - the transaction group to execute a given Alammex quote
 
+### Installation
+
+Run: `pip install git+https://github.com/PhilGabardo/Alammex-Python-SDK`
+
 ## Fetch Alammex Quote
 
 To fetch an Alammex quote, initialize the client and use:
