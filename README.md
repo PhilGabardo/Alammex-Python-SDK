@@ -17,20 +17,42 @@ To fetch an Alammex quote, initialize the client and use:
 Example (for fixed input):
 
 ```
-from alammex.v1.alammex_client import AlammexMainnetClient
+from algosdk.v2client import algod
 import algosdk
 import msgpack
 
-algodUri = <INSERT URI>
-algodToken = <INSERT TOKEN>
-algodPort = ''
-apiKey = ''
-inputAsset = 0 # ALGO
-outputAsset = 31566704 # USDC
-amount = 1000000 # amount in base units. This would equate to 1 ALGO (since ALGO has 6 decimals)
 
-client = AlammexMainnetClient(algodUri, algodToken, algodPort, apiKey)
-quote = client.get_fixed_input_swap_quote(0, 10458941, 1000000)
+from alammex.v1.alammex_client import AlammexTestnetClient
+
+senderAddress = 'DWQXOZMGDA6QZRSPER6O4AMTO3BQ6CEJMFO25EWRRBK72RJO54GLDCGK4E'
+senderPk = algosdk.mnemonic.to_private_key('bottom stone elegant just symbol bunker review curve laugh burden jewel pepper replace north tornado alert relief wrist better property spider picture insect abandon tuna')
+
+algodUri = 'https://testnet-algorand.api.purestake.io/ps2'
+algodToken = {
+	'X-API-Key': '<INSERT_PURESTAKE_KEY>'
+}
+algodPort = ''
+apiKey = '' # reach out to phil@alammex.com to get custom API key with higher rate limit
+algod = algod.AlgodClient(algodToken['X-API-Key'], algodUri, algodToken)
+params = algod.suggested_params()
+inputAssetId = 0
+outputAssetId = 10458941
+amount = 1000000
+
+client = AlammexTestnetClient(algodUri, algodToken, algodPort, apiKey)
+quote = client.get_fixed_input_swap_quote(inputAssetId, outputAssetId, amount)
+requiredAppOptIns = quote.requiredAppOptIns
+
+accountInfo = algod.account_info(senderAddress)
+appsLocalState = accountInfo['apps-local-state']
+
+# opt into required apps for swap
+for requiredAppOptIn in requiredAppOptIns:
+	requiredAppLocalState = [appLocalState['id'] == requiredAppOptIn for appLocalState in appsLocalState]
+	if len(requiredAppLocalState) == 0:
+		appOptIn = algosdk.future.transaction.ApplicationOptInTxn(senderAddress, params, requiredAppOptIn)
+		signedAppOptIn = appOptIn.sign(senderPk)
+		algod.send_transaction(signedAppOptIn)
 ```
 
 ## Fetch Transaction Group for Executing Alammex Quote
@@ -43,18 +65,15 @@ Example (using quote from example above):
 ```
 ...
 
-swapperAddress = 'DWQXOZMGDA6QZRSPER6O4AMTO3BQ6CEJMFO25EWRRBK72RJO54GLDCGK4E'
-swapperMnemonic = 'bottom stone elegant just symbol bunker review curve laugh burden jewel pepper replace north tornado alert relief wrist better property spider picture insect abandon tuna'
-referrer = '' # referrer address, for getting 50% of commission fees (see https://docs.alammex.com/developers/alammex-referral-program)
-slippage = 1 # slippage percent
+slippage = 5
+referrer = ''
+
 txnGroup = client.get_swap_quote_transactions(
-	swapperAddress,
+	senderAddress,
 	quote,
 	slippage,
 	referrer
 )
-
-pk = algosdk.mnemonic.to_private_key(swapperMnemonic)
 
 signedTxns = []
 for txn in txnGroup.txns:
@@ -62,9 +81,7 @@ for txn in txnGroup.txns:
 		signedTxns.append(msgpack.unpackb(txn.logicSigBlob))
 	else:
 		txnObj = algosdk.encoding.future_msgpack_decode(txn.data)
-		signedTxns.append(txnObj.sign(pk))
-
-algod = algod.AlgodClient(algodToken['X-API-Key'], algodUri, algodToken) # assuming purestake algod
+		signedTxns.append(txnObj.sign(senderPk))
 
 txId = algod.send_transactions(signedTxns)
 
