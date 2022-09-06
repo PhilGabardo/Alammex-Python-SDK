@@ -10,7 +10,7 @@ class AlammexClient:
         self.chain = chain
         self.apiKey = apiKey
 
-    def get_fixed_input_swap_quote(self, fromASAId: int, toASAId: int, amount: int):
+    def get_fixed_input_swap_quote(self, fromASAId: int, toASAId: int, amount: int, disabledProtocols: list = [], maxGroupSize: int = 16):
         apiResponse = fetch_api_data(self.chain, 'fetchQuote', {
             'algodUri': self.algodUri,
             'algodToken': self.algodToken,
@@ -19,11 +19,13 @@ class AlammexClient:
             'type': 'fixed-input',
             'fromASAID': fromASAId,
             'toASAID': toASAId,
-            'apiKey': self.apiKey
+            'apiKey': self.apiKey,
+            'disabledProtocols': disabledProtocols,
+            'maxGroupSize': maxGroupSize
         })
         return AlammexQuote.from_api_response(apiResponse)
 
-    def get_fixed_output_swap_quote(self, fromASAId: int, toASAId: int, amount: int):
+    def get_fixed_output_swap_quote(self, fromASAId: int, toASAId: int, amount: int, disabledProtocols: list = [], maxGroupSize: int = 16):
         apiResponse = fetch_api_data(self.chain, 'fetchQuote', {
             'algodUri': self.algodUri,
             'algodToken': self.algodToken,
@@ -32,7 +34,9 @@ class AlammexClient:
             'type': 'fixed-output',
             'fromASAID': fromASAId,
             'toASAID': toASAId,
-            'apiKey': self.apiKey
+            'apiKey': self.apiKey,
+            'disabledProtocols': disabledProtocols,
+            'maxGroupSize': maxGroupSize
         })
         return AlammexQuote.from_api_response(apiResponse)
 
