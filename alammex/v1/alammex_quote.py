@@ -18,7 +18,7 @@ class AlammexQuote:
         return AlammexQuote(
             apiResponse['quote'],
             apiResponse['profit']['amount'],
-            apiResponse['profit']['asa']['id'],
+            apiResponse['profit']['asa'],
             apiResponse['priceBaseline'],
             [AlammexRoute.from_api_response(_route) for _route in apiResponse['route']],
             [DexQuote.from_api_response(_quote) for _quote in apiResponse['quotes']],
